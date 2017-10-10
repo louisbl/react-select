@@ -76,7 +76,9 @@ function menuRenderer(_ref) {
 	var Option = optionComponent;
 
 	return options.map(function (option, i) {
-		var isSelected = valueArray && valueArray.indexOf(option) > -1;
+		var isSelected = valueArray && valueArray.some(function (x) {
+			return x[valueKey] == option[valueKey];
+		});
 		var isFocused = option === focusedOption;
 		var optionClass = classNames(optionClassName, {
 			'Select-option': true,
@@ -114,7 +116,6 @@ function clearRenderer() {
 	});
 }
 
-var babelHelpers = {};
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -344,28 +345,6 @@ var possibleConstructorReturn = function (self, call) {
 
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-babelHelpers;
 
 var Option = function (_React$Component) {
 	inherits(Option, _React$Component);
@@ -663,7 +642,10 @@ var Select$1 = function (_React$Component) {
 	}, {
 		key: 'componentDidMount',
 		value: function componentDidMount() {
-			if (this.props.autofocus) {
+			if (typeof this.props.autofocus !== 'undefined' && typeof console !== 'undefined') {
+				console.warn('Warning: The autofocus prop will be deprecated in react-select1.0.0 in favor of autoFocus to match React\'s autoFocus prop');
+			}
+			if (this.props.autoFocus || this.props.autofocus) {
 				this.focus();
 			}
 		}
@@ -1168,7 +1150,14 @@ var Select$1 = function (_React$Component) {
 					inputValue: this.handleInputValueChange(updatedValue),
 					isOpen: !this.props.closeOnSelect
 				}, function () {
-					_this4.addValue(value);
+					var valueArray = _this4.getValueArray(_this4.props.value);
+					if (valueArray.some(function (i) {
+						return i[_this4.props.valueKey] === value[_this4.props.valueKey];
+					})) {
+						_this4.removeValue(value);
+					} else {
+						_this4.addValue(value);
+					}
 				});
 			} else {
 				this.setState({
@@ -1208,9 +1197,11 @@ var Select$1 = function (_React$Component) {
 	}, {
 		key: 'removeValue',
 		value: function removeValue(value) {
+			var _this5 = this;
+
 			var valueArray = this.getValueArray(this.props.value);
 			this.setValue(valueArray.filter(function (i) {
-				return i !== value;
+				return i[_this5.props.valueKey] !== value[_this5.props.valueKey];
 			}));
 			this.focus();
 		}
@@ -1370,7 +1361,7 @@ var Select$1 = function (_React$Component) {
 	}, {
 		key: 'renderValue',
 		value: function renderValue(valueArray, isOpen) {
-			var _this5 = this;
+			var _this6 = this;
 
 			var renderLabel = this.props.valueRenderer || this.getOptionLabel;
 			var ValueComponent = this.props.valueComponent;
@@ -1387,12 +1378,12 @@ var Select$1 = function (_React$Component) {
 					return React.createElement(
 						ValueComponent,
 						{
-							id: _this5._instancePrefix + '-value-' + i,
-							instancePrefix: _this5._instancePrefix,
-							disabled: _this5.props.disabled || value.clearableValue === false,
-							key: 'value-' + i + '-' + value[_this5.props.valueKey],
+							id: _this6._instancePrefix + '-value-' + i,
+							instancePrefix: _this6._instancePrefix,
+							disabled: _this6.props.disabled || value.clearableValue === false,
+							key: 'value-' + i + '-' + value[_this6.props.valueKey],
 							onClick: onClick,
-							onRemove: _this5.removeValue,
+							onRemove: _this6.removeValue,
 							value: value
 						},
 						renderLabel(value, i),
@@ -1422,7 +1413,7 @@ var Select$1 = function (_React$Component) {
 		key: 'renderInput',
 		value: function renderInput(valueArray, focusedOptionIndex) {
 			var _classNames,
-			    _this6 = this;
+			    _this7 = this;
 
 			var className = classNames('Select-input', this.props.inputProps.className);
 			var isOpen = !!this.state.isOpen;
@@ -1444,7 +1435,7 @@ var Select$1 = function (_React$Component) {
 				onChange: this.handleInputChange,
 				onFocus: this.handleInputFocus,
 				ref: function ref(_ref) {
-					return _this6.input = _ref;
+					return _this7.input = _ref;
 				},
 				required: this.state.required,
 				value: this.state.inputValue
@@ -1472,7 +1463,7 @@ var Select$1 = function (_React$Component) {
 					onBlur: this.handleInputBlur,
 					onFocus: this.handleInputFocus,
 					ref: function ref(_ref2) {
-						return _this6.input = _ref2;
+						return _this7.input = _ref2;
 					},
 					'aria-readonly': '' + !!this.props.disabled,
 					style: { border: 0, width: 1, display: 'inline-block' } }));
@@ -1483,7 +1474,7 @@ var Select$1 = function (_React$Component) {
 			}
 			return React.createElement(
 				'div',
-				{ className: className },
+				{ className: className, key: 'input-wrap' },
 				React.createElement('input', inputProps)
 			);
 		}
@@ -1583,17 +1574,17 @@ var Select$1 = function (_React$Component) {
 	}, {
 		key: 'renderHiddenField',
 		value: function renderHiddenField(valueArray) {
-			var _this7 = this;
+			var _this8 = this;
 
 			if (!this.props.name) return;
 			if (this.props.joinValues) {
 				var value = valueArray.map(function (i) {
-					return stringifyValue(i[_this7.props.valueKey]);
+					return stringifyValue(i[_this8.props.valueKey]);
 				}).join(this.props.delimiter);
 				return React.createElement('input', {
 					type: 'hidden',
 					ref: function ref(_ref3) {
-						return _this7.value = _ref3;
+						return _this8.value = _ref3;
 					},
 					name: this.props.name,
 					value: value,
@@ -1603,9 +1594,9 @@ var Select$1 = function (_React$Component) {
 				return React.createElement('input', { key: 'hidden.' + index,
 					type: 'hidden',
 					ref: 'value' + index,
-					name: _this7.props.name,
-					value: stringifyValue(item[_this7.props.valueKey]),
-					disabled: _this7.props.disabled });
+					name: _this8.props.name,
+					value: stringifyValue(item[_this8.props.valueKey]),
+					disabled: _this8.props.disabled });
 			});
 		}
 	}, {
@@ -1638,7 +1629,7 @@ var Select$1 = function (_React$Component) {
 	}, {
 		key: 'renderOuter',
 		value: function renderOuter(options, valueArray, focusedOption) {
-			var _this8 = this;
+			var _this9 = this;
 
 			var menu = this.renderMenu(options, valueArray, focusedOption);
 			if (!menu) {
@@ -1648,12 +1639,12 @@ var Select$1 = function (_React$Component) {
 			return React.createElement(
 				'div',
 				{ ref: function ref(_ref5) {
-						return _this8.menuContainer = _ref5;
+						return _this9.menuContainer = _ref5;
 					}, className: 'Select-menu-outer', style: this.props.menuContainerStyle },
 				React.createElement(
 					'div',
 					{ ref: function ref(_ref4) {
-							return _this8.menu = _ref4;
+							return _this9.menu = _ref4;
 						}, role: 'listbox', tabIndex: -1, className: 'Select-menu', id: this._instancePrefix + '-list',
 						style: this.props.menuStyle,
 						onScroll: this.handleMenuScroll,
@@ -1665,10 +1656,10 @@ var Select$1 = function (_React$Component) {
 	}, {
 		key: 'render',
 		value: function render() {
-			var _this9 = this;
+			var _this10 = this;
 
 			var valueArray = this.getValueArray(this.props.value);
-			var options = this._visibleOptions = this.filterOptions(this.props.multi ? this.getValueArray(this.props.value) : null);
+			var options = this._visibleOptions = this.filterOptions(this.props.multi && this.props.removeSelected ? valueArray : null);
 			var isOpen = this.state.isOpen;
 			if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
 			var focusedOptionIndex = this.getFocusableOptionIndex(valueArray[0]);
@@ -1704,7 +1695,7 @@ var Select$1 = function (_React$Component) {
 			return React.createElement(
 				'div',
 				{ ref: function ref(_ref7) {
-						return _this9.wrapper = _ref7;
+						return _this10.wrapper = _ref7;
 					},
 					className: className,
 					style: this.props.wrapperStyle },
@@ -1712,7 +1703,7 @@ var Select$1 = function (_React$Component) {
 				React.createElement(
 					'div',
 					{ ref: function ref(_ref6) {
-							return _this9.control = _ref6;
+							return _this10.control = _ref6;
 						},
 						className: 'Select-control',
 						style: this.props.style,
@@ -1733,7 +1724,7 @@ var Select$1 = function (_React$Component) {
 					this.renderClear(),
 					this.renderArrow()
 				),
-				isOpen ? this.renderOuter(options, !this.props.multi ? valueArray : null, focusedOption) : null
+				isOpen ? this.renderOuter(options, valueArray, focusedOption) : null
 			);
 		}
 	}]);
@@ -1749,7 +1740,8 @@ Select$1.propTypes = {
 	addLabelText: PropTypes.string, // placeholder displayed when you want to add a label on a multi-value input
 	arrowRenderer: PropTypes.func, // Create drop-down caret element
 	autoBlur: PropTypes.bool, // automatically blur the component when an option is selected
-	autofocus: PropTypes.bool, // autofocus the component on mount
+	autofocus: PropTypes.bool, // deprecated; use autoFocus instead
+	autoFocus: PropTypes.bool, // autofocus the component on mount
 	autosize: PropTypes.bool, // whether to enable autosizing or not
 	backspaceRemoves: PropTypes.bool, // whether backspace removes an item if there is no text input
 	backspaceToRemoveMessage: PropTypes.string, // Message to use for screenreaders to press backspace to remove the current item - {label} is replaced with the item label
@@ -1802,6 +1794,7 @@ Select$1.propTypes = {
 	options: PropTypes.array, // array of options
 	pageSize: PropTypes.number, // number of entries to page when using page up/down keys
 	placeholder: stringOrNode, // field placeholder, displayed when there's no value
+	removeSelected: PropTypes.bool, // whether the selected option is removed from the dropdown on multi selects
 	required: PropTypes.bool, // applies HTML5 required attribute when needed
 	resetValue: PropTypes.any, // value to use when you clear the control
 	scrollMenuIntoView: PropTypes.bool, // boolean to enable the viewport to shift so that the full menu fully visible when engaged
@@ -1852,6 +1845,7 @@ Select$1.defaultProps = {
 	optionComponent: Option,
 	pageSize: 5,
 	placeholder: 'Select...',
+	removeSelected: true,
 	required: false,
 	scrollMenuIntoView: true,
 	searchable: true,
@@ -1950,6 +1944,8 @@ var Async = function (_Component) {
 			var cache = this._cache;
 
 			if (cache && Object.prototype.hasOwnProperty.call(cache, inputValue)) {
+				this._callback = null;
+
 				this.setState({
 					options: cache[inputValue]
 				});
@@ -1958,14 +1954,14 @@ var Async = function (_Component) {
 			}
 
 			var callback = function callback(error, data) {
+				var options = data && data.options || [];
+
+				if (cache) {
+					cache[inputValue] = options;
+				}
+
 				if (callback === _this2._callback) {
 					_this2._callback = null;
-
-					var options = data && data.options || [];
-
-					if (cache) {
-						cache[inputValue] = options;
-					}
 
 					_this2.setState({
 						isLoading: false,
