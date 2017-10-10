@@ -120,7 +120,6 @@ function clearRenderer() {
 	});
 }
 
-var babelHelpers = {};
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -350,28 +349,6 @@ var possibleConstructorReturn = function (self, call) {
 
   return call && (typeof call === "object" || typeof call === "function") ? call : self;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-babelHelpers;
 
 var Option = function (_React$Component) {
 	inherits(Option, _React$Component);
@@ -669,7 +646,10 @@ var Select$1 = function (_React$Component) {
 	}, {
 		key: 'componentDidMount',
 		value: function componentDidMount() {
-			if (this.props.autofocus) {
+			if (typeof this.props.autofocus !== 'undefined' && typeof console !== 'undefined') {
+				console.warn('Warning: The autofocus prop will be deprecated in react-select1.0.0 in favor of autoFocus to match React\'s autoFocus prop');
+			}
+			if (this.props.autoFocus || this.props.autofocus) {
 				this.focus();
 			}
 		}
@@ -1213,11 +1193,10 @@ var Select$1 = function (_React$Component) {
 		}
 	}, {
 		key: 'removeValue',
-		value: function removeValue(value) {
+		value: function removeValue(index) {
 			var valueArray = this.getValueArray(this.props.value);
-			this.setValue(valueArray.filter(function (i) {
-				return i !== value;
-			}));
+			valueArray.splice(index, 1);
+			this.setValue(valueArray);
 			this.focus();
 		}
 	}, {
@@ -1398,7 +1377,9 @@ var Select$1 = function (_React$Component) {
 							disabled: _this5.props.disabled || value.clearableValue === false,
 							key: 'value-' + i + '-' + value[_this5.props.valueKey],
 							onClick: onClick,
-							onRemove: _this5.removeValue,
+							onRemove: function onRemove() {
+								return _this5.removeValue(i);
+							},
 							value: value
 						},
 						renderLabel(value, i),
@@ -1489,7 +1470,7 @@ var Select$1 = function (_React$Component) {
 			}
 			return React__default.createElement(
 				'div',
-				{ className: className },
+				{ className: className, key: 'input-wrap' },
 				React__default.createElement('input', inputProps)
 			);
 		}
@@ -1674,7 +1655,7 @@ var Select$1 = function (_React$Component) {
 			var _this9 = this;
 
 			var valueArray = this.getValueArray(this.props.value);
-			var options = this._visibleOptions = this.filterOptions(this.props.multi ? this.getValueArray(this.props.value) : null);
+			var options = this._visibleOptions = this.filterOptions(this.props.multi && this.props.removeSelected ? valueArray : null);
 			var isOpen = this.state.isOpen;
 			if (this.props.multi && !options.length && valueArray.length && !this.state.inputValue) isOpen = false;
 			var focusedOptionIndex = this.getFocusableOptionIndex(valueArray[0]);
@@ -1755,7 +1736,8 @@ Select$1.propTypes = {
 	addLabelText: PropTypes.string, // placeholder displayed when you want to add a label on a multi-value input
 	arrowRenderer: PropTypes.func, // Create drop-down caret element
 	autoBlur: PropTypes.bool, // automatically blur the component when an option is selected
-	autofocus: PropTypes.bool, // autofocus the component on mount
+	autofocus: PropTypes.bool, // deprecated; use autoFocus instead
+	autoFocus: PropTypes.bool, // autofocus the component on mount
 	autosize: PropTypes.bool, // whether to enable autosizing or not
 	backspaceRemoves: PropTypes.bool, // whether backspace removes an item if there is no text input
 	backspaceToRemoveMessage: PropTypes.string, // Message to use for screenreaders to press backspace to remove the current item - {label} is replaced with the item label
@@ -1808,6 +1790,7 @@ Select$1.propTypes = {
 	options: PropTypes.array, // array of options
 	pageSize: PropTypes.number, // number of entries to page when using page up/down keys
 	placeholder: stringOrNode, // field placeholder, displayed when there's no value
+	removeSelected: PropTypes.bool, // whether the selected option is removed from the dropdown on multi selects
 	required: PropTypes.bool, // applies HTML5 required attribute when needed
 	resetValue: PropTypes.any, // value to use when you clear the control
 	scrollMenuIntoView: PropTypes.bool, // boolean to enable the viewport to shift so that the full menu fully visible when engaged
@@ -1858,6 +1841,7 @@ Select$1.defaultProps = {
 	optionComponent: Option,
 	pageSize: 5,
 	placeholder: 'Select...',
+	removeSelected: true,
 	required: false,
 	scrollMenuIntoView: true,
 	searchable: true,
@@ -1956,6 +1940,8 @@ var Async = function (_Component) {
 			var cache = this._cache;
 
 			if (cache && Object.prototype.hasOwnProperty.call(cache, inputValue)) {
+				this._callback = null;
+
 				this.setState({
 					options: cache[inputValue]
 				});
@@ -1964,14 +1950,14 @@ var Async = function (_Component) {
 			}
 
 			var callback = function callback(error, data) {
+				var options = data && data.options || [];
+
+				if (cache) {
+					cache[inputValue] = options;
+				}
+
 				if (callback === _this2._callback) {
 					_this2._callback = null;
-
-					var options = data && data.options || [];
-
-					if (cache) {
-						cache[inputValue] = options;
-					}
 
 					_this2.setState({
 						isLoading: false,
